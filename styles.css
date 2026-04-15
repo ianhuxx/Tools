@@ -1,19 +1,29 @@
 :root {
   color-scheme: light dark;
-  --bg: #0f172a;
-  --card: #1e293b;
+  --bg: #060a14;
+  --card: rgba(19, 30, 52, 0.72);
+  --card-border: rgba(148, 163, 184, 0.24);
   --text: #e2e8f0;
-  --muted: #94a3b8;
-  --accent: #38bdf8;
+  --muted: #93a8c4;
+  --accent: #45b7ff;
+  --accent-2: #7c3aed;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --shadow: 0 14px 38px rgba(0, 0, 0, 0.35);
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #f8fafc;
-    --card: #ffffff;
+    --bg: #edf3ff;
+    --card: rgba(255, 255, 255, 0.88);
+    --card-border: rgba(51, 65, 85, 0.12);
     --text: #0f172a;
     --muted: #475569;
-    --accent: #0369a1;
+    --accent: #0ea5e9;
+    --accent-2: #4f46e5;
+    --success: #16a34a;
+    --danger: #dc2626;
+    --shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
   }
 }
 
@@ -23,66 +33,168 @@
 
 body {
   margin: 0;
+  min-height: 100vh;
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 15% 10%, color-mix(in oklab, var(--accent) 26%, transparent), transparent 42%),
+    radial-gradient(circle at 85% 15%, color-mix(in oklab, var(--accent-2) 24%, transparent), transparent 50%),
+    var(--bg);
   color: var(--text);
 }
 
 .container {
-  width: min(900px, 92vw);
-  margin: 2rem auto;
+  width: min(940px, 92vw);
+  margin: 2rem auto 2.5rem;
 }
 
 h1 {
-  margin-bottom: 0.5rem;
+  margin: 0;
+  line-height: 1.2;
+}
+
+h2 {
+  margin-top: 0;
 }
 
 .lead {
   color: var(--muted);
-  margin-bottom: 1.5rem;
+  margin: 0.7rem 0 0;
 }
 
 .card {
   background: var(--card);
-  border: 1px solid color-mix(in oklab, var(--muted) 35%, transparent);
-  border-radius: 0.8rem;
-  padding: 1rem 1.2rem;
+  border: 1px solid var(--card-border);
+  backdrop-filter: blur(10px);
+  border-radius: 1rem;
+  box-shadow: var(--shadow);
+  padding: 1.2rem 1.3rem;
   margin-bottom: 1rem;
+}
+
+.hero {
+  margin-bottom: 1.1rem;
 }
 
 .label {
   display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
+  margin-bottom: 0.6rem;
+  font-weight: 700;
+}
+
+.drop-zone {
+  border: 2px dashed color-mix(in oklab, var(--accent) 60%, var(--card-border));
+  border-radius: 0.9rem;
+  padding: 1rem;
+  margin-bottom: 0.9rem;
+  transition: 0.18s ease;
+  background: color-mix(in oklab, var(--card) 76%, transparent);
+}
+
+.drop-zone.drag-active {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 5px color-mix(in oklab, var(--accent) 20%, transparent);
+}
+
+.drop-title {
+  margin: 0;
+  font-weight: 650;
+}
+
+.drop-subtitle {
+  margin: 0.25rem 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.95rem;
 }
 
 input[type="file"] {
   width: 100%;
+  margin-bottom: 0.4rem;
+}
+
+.options-grid {
   margin-bottom: 0.9rem;
+}
+
+.checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text);
+  font-size: 0.95rem;
 }
 
 .button {
   border: 0;
-  border-radius: 0.6rem;
-  padding: 0.7rem 1rem;
-  background: var(--accent);
+  border-radius: 0.68rem;
+  padding: 0.75rem 1.15rem;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
   color: white;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  box-shadow: 0 8px 20px color-mix(in oklab, var(--accent) 34%, transparent);
+}
+
+.button:hover:enabled {
+  transform: translateY(-1px);
 }
 
 .button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  box-shadow: none;
+}
+
+.progress-wrap {
+  width: 100%;
+  height: 12px;
+  background: color-mix(in oklab, var(--muted) 18%, transparent);
+  border-radius: 999px;
+  margin-top: 0.95rem;
+  overflow: hidden;
+}
+
+.progress-bar {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--success));
+  transition: width 0.2s ease;
+}
+
+.progress-text {
+  margin-top: 0.5rem;
 }
 
 .status {
-  margin-top: 0.8rem;
+  margin-top: 0.6rem;
   min-height: 1.2rem;
   color: var(--muted);
+}
+
+.error-box {
+  white-space: pre-wrap;
+  margin-top: 0.7rem;
+  padding: 0.75rem;
+  border-radius: 0.7rem;
+  border: 1px solid color-mix(in oklab, var(--danger) 65%, transparent);
+  color: color-mix(in oklab, var(--danger) 90%, var(--text));
+  background: color-mix(in oklab, var(--danger) 12%, transparent);
+  font-size: 0.93rem;
 }
 
 .small {
   color: var(--muted);
   font-size: 0.95rem;
+}
+
+code {
+  background: color-mix(in oklab, var(--card) 45%, transparent);
+  border: 1px solid var(--card-border);
+  border-radius: 0.3rem;
+  padding: 0.05rem 0.3rem;
+}
+
+ul {
+  margin-top: 0.45rem;
 }

@@ -15,7 +15,6 @@ function readFileAsText(file) {
   });
 }
 
-
 function md5HexFromBase64(base64) {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -114,46 +113,163 @@ function buildDocHtml(note) {
 </html>`;
 }
 
-async function convertFiles(files, statusEl) {
+function updateProgress(progressBarEl, progressTextEl, done, total, label) {
+  const safeTotal = Math.max(total, 1);
+  const percent = Math.round((done / safeTotal) * 100);
+  progressBarEl.style.width = `${percent}%`;
+  progressTextEl.textContent = label || `Progress: ${done}/${total} (${percent}%)`;
+}
+
+async function countTotalNotes(files) {
+  let total = 0;
+  for (const file of files) {
+    const xmlText = await readFileAsText(file);
+    total += parseEnex(xmlText).length;
+  }
+  return total;
+}
+
+async function convertFiles(files, controls) {
+  const {
+    statusEl,
+    progressBarEl,
+    progressTextEl,
+    singleOutputEnabled,
+    errorBoxEl
+  } = controls;
+
+  errorBoxEl.hidden = true;
+  errorBoxEl.textContent = "";
+
+  statusEl.textContent = "Scanning ENEX files...";
+  const totalNotes = await countTotalNotes(files);
+
+  if (totalNotes === 0) {
+    throw new Error("No notes found in selected ENEX file(s).");
+  }
+
+  let convertedNotes = 0;
+  const failures = [];
+
+  updateProgress(progressBarEl, progressTextEl, 0, totalNotes, `Starting conversion (0/${totalNotes})...`);
+
   const zip = new JSZip();
-  let totalNotes = 0;
+  const flatOutputs = [];
 
   for (const file of files) {
     statusEl.textContent = `Reading ${file.name}...`;
-    const xmlText = await readFileAsText(file);
-    const notes = parseEnex(xmlText);
+    let xmlText;
+    let notes;
+    try {
+      xmlText = await readFileAsText(file);
+      notes = parseEnex(xmlText);
+    } catch (err) {
+      failures.push(`File ${file.name}: ${err.message || String(err)}`);
+      continue;
+    }
 
     const notebookFolder = zip.folder(cleanFileName(file.name.replace(/\.enex$/i, "")));
-    let noteIndex = 1;
 
-    for (const note of notes) {
-      totalNotes += 1;
-      statusEl.textContent = `Converting: ${note.title}`;
-      const html = buildDocHtml(note);
-      const blob = window.htmlDocx.asBlob(html);
-      const fileName = `${String(noteIndex).padStart(4, "0")}-${cleanFileName(note.title)}.docx`;
-      notebookFolder.file(fileName, blob);
-      noteIndex += 1;
+    for (let i = 0; i < notes.length; i += 1) {
+      const note = notes[i];
+      try {
+        statusEl.textContent = `Converting: ${note.title}`;
+        const html = buildDocHtml(note);
+        const blob = window.htmlDocx.asBlob(html);
+        const fileName = `${String(i + 1).padStart(4, "0")}-${cleanFileName(note.title)}.docx`;
+        notebookFolder.file(fileName, blob);
+        flatOutputs.push({ fileName, blob, notebook: cleanFileName(file.name.replace(/\.enex$/i, "")) });
+        convertedNotes += 1;
+      } catch (err) {
+        failures.push(`Note "${note.title}" in ${file.name}: ${err.message || String(err)}`);
+      }
+      updateProgress(progressBarEl, progressTextEl, convertedNotes, totalNotes);
     }
   }
 
-  statusEl.textContent = "Creating ZIP...";
-  const finalZip = await zip.generateAsync({ type: "blob" });
-  saveAs(finalZip, `enex-to-onenote-${Date.now()}.zip`);
-  statusEl.textContent = `Done. Converted ${totalNotes} notes.`;
+  if (convertedNotes === 0) {
+    throw new Error(`Conversion failed for all notes. ${failures[0] || "Unknown error."}`);
+  }
+
+  statusEl.textContent = "Preparing download...";
+
+  if (singleOutputEnabled && flatOutputs.length === 1) {
+    saveAs(flatOutputs[0].blob, flatOutputs[0].fileName);
+    statusEl.textContent = "Done. Downloaded 1 DOCX file.";
+  } else {
+    const finalZip = await zip.generateAsync({ type: "blob" });
+    saveAs(finalZip, `enex-to-onenote-${Date.now()}.zip`);
+    statusEl.textContent = `Done. Converted ${convertedNotes} note(s) into a structured ZIP.`;
+  }
+
+  if (failures.length > 0) {
+    errorBoxEl.hidden = false;
+    const max = failures.slice(0, 8);
+    const more = failures.length > max.length ? `\n...and ${failures.length - max.length} more issue(s).` : "";
+    errorBoxEl.textContent = `Some items could not be converted:\n- ${max.join("\n- ")}${more}`;
+  }
+}
+
+function initDragAndDrop(dropZone, filesInput, onFilesSelected) {
+  const prevent = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+    dropZone.addEventListener(eventName, prevent);
+  });
+
+  ["dragenter", "dragover"].forEach((eventName) => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.add("drag-active"));
+  });
+
+  ["dragleave", "drop"].forEach((eventName) => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.remove("drag-active"));
+  });
+
+  dropZone.addEventListener("drop", (event) => {
+    const droppedFiles = Array.from(event.dataTransfer?.files || []).filter((f) =>
+      /\.enex$/i.test(f.name)
+    );
+    const transfer = new DataTransfer();
+    droppedFiles.forEach((f) => transfer.items.add(f));
+    filesInput.files = transfer.files;
+    onFilesSelected();
+  });
+
+  dropZone.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      filesInput.click();
+    }
+  });
 }
 
 function init() {
   const filesInput = document.getElementById("enexFiles");
   const convertBtn = document.getElementById("convertBtn");
   const statusEl = document.getElementById("status");
+  const progressBarEl = document.getElementById("progressBar");
+  const progressTextEl = document.getElementById("progressText");
+  const singleOutputEl = document.getElementById("singleOutput");
+  const errorBoxEl = document.getElementById("errorBox");
+  const dropZone = document.getElementById("dropZone");
 
-  filesInput.addEventListener("change", () => {
-    convertBtn.disabled = !filesInput.files || filesInput.files.length === 0;
-    statusEl.textContent = filesInput.files?.length
-      ? `${filesInput.files.length} file(s) selected.`
+  const onFilesSelected = () => {
+    const hasFiles = Boolean(filesInput.files && filesInput.files.length > 0);
+    convertBtn.disabled = !hasFiles;
+    statusEl.textContent = hasFiles
+      ? `${filesInput.files.length} ENEX file(s) selected.`
       : "";
-  });
+    if (!hasFiles) {
+      updateProgress(progressBarEl, progressTextEl, 0, 1, "No conversion running.");
+      errorBoxEl.hidden = true;
+      errorBoxEl.textContent = "";
+    }
+  };
+
+  filesInput.addEventListener("change", onFilesSelected);
+  initDragAndDrop(dropZone, filesInput, onFilesSelected);
 
   convertBtn.addEventListener("click", async () => {
     const files = Array.from(filesInput.files || []);
@@ -163,14 +279,25 @@ function init() {
     }
 
     convertBtn.disabled = true;
+    updateProgress(progressBarEl, progressTextEl, 0, 1, "Preparing conversion...");
     try {
-      await convertFiles(files, statusEl);
+      await convertFiles(files, {
+        statusEl,
+        progressBarEl,
+        progressTextEl,
+        singleOutputEnabled: singleOutputEl.checked,
+        errorBoxEl
+      });
     } catch (err) {
       statusEl.textContent = `Error: ${err.message || String(err)}`;
+      errorBoxEl.hidden = false;
+      errorBoxEl.textContent = `Conversion stopped: ${err.message || String(err)}`;
     } finally {
       convertBtn.disabled = false;
     }
   });
+
+  updateProgress(progressBarEl, progressTextEl, 0, 1, "No conversion running.");
 }
 
 window.addEventListener("DOMContentLoaded", init);
