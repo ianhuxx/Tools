@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ENEX → OneNote Helper</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-docx-js/0.3.1/html-docx.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="container">
+      <h1>ENEX → OneNote (One-Click Helper)</h1>
+      <p class="lead">
+        Upload one or more exported Evernote <code>.enex</code> notebook files, then click
+        <strong>Convert & Download</strong>. You will get a ZIP containing one <code>.docx</code>
+        per note, ready to drag into OneNote.
+      </p>
+
+      <section class="card">
+        <label for="enexFiles" class="label">1) Select your ENEX files</label>
+        <input id="enexFiles" type="file" accept=".enex,application/xml,text/xml" multiple />
+
+        <button id="convertBtn" class="button" disabled>2) Convert & Download ZIP</button>
+
+        <div id="status" class="status" aria-live="polite"></div>
+      </section>
+
+      <section class="card">
+        <h2>How to import to OneNote (easiest path)</h2>
+        <ol>
+          <li>Open OneNote desktop app (Windows/Mac).</li>
+          <li>Unzip the downloaded file.</li>
+          <li>Select all <code>.docx</code> files and drag them into the target OneNote section.</li>
+          <li>OneNote creates one page per document automatically.</li>
+        </ol>
+        <p class="small">
+          Tip: This preserves note text, basic formatting, tables, checkboxes, links, and inline
+          images in most cases.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
