@@ -13,33 +13,56 @@
   </head>
   <body>
     <main class="container">
-      <h1>ENEX → OneNote (One-Click Helper)</h1>
-      <p class="lead">
-        Upload one or more exported Evernote <code>.enex</code> notebook files, then click
-        <strong>Convert & Download</strong>. You will get a ZIP containing one <code>.docx</code>
-        per note, ready to drag into OneNote.
-      </p>
+      <header class="hero card">
+        <h1>ENEX → OneNote (One-Click Helper)</h1>
+        <p class="lead">
+          Convert Evernote exports into OneNote-friendly files with structure-aware folders,
+          conversion progress, and clear error reporting.
+        </p>
+      </header>
 
       <section class="card">
-        <label for="enexFiles" class="label">1) Select your ENEX files</label>
-        <input id="enexFiles" type="file" accept=".enex,application/xml,text/xml" multiple />
+        <label for="enexFiles" class="label">1) Add your ENEX file(s)</label>
+        <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="Drop ENEX files here">
+          <p class="drop-title">Drop .enex files here</p>
+          <p class="drop-subtitle">or click below to browse</p>
+          <input id="enexFiles" type="file" accept=".enex,application/xml,text/xml" multiple />
+        </div>
 
-        <button id="convertBtn" class="button" disabled>2) Convert & Download ZIP</button>
+        <div class="options-grid">
+          <label class="checkbox-label" for="singleOutput">
+            <input id="singleOutput" type="checkbox" />
+            Download a single <code>.docx</code> when exactly 1 note is converted
+          </label>
+        </div>
+
+        <button id="convertBtn" class="button" disabled>2) Convert & Download</button>
+
+        <div class="progress-wrap" aria-live="polite" aria-label="Conversion progress">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <p id="progressText" class="small progress-text">No conversion running.</p>
 
         <div id="status" class="status" aria-live="polite"></div>
+        <div id="errorBox" class="error-box" role="alert" aria-live="assertive" hidden></div>
       </section>
 
       <section class="card">
         <h2>How to import to OneNote (easiest path)</h2>
         <ol>
           <li>Open OneNote desktop app (Windows/Mac).</li>
-          <li>Unzip the downloaded file.</li>
-          <li>Select all <code>.docx</code> files and drag them into the target OneNote section.</li>
+          <li>Use generated file(s):
+            <ul>
+              <li>If you got a ZIP, unzip it first (folders mirror your ENEX notebook names).</li>
+              <li>If you got one DOCX, drag it directly.</li>
+            </ul>
+          </li>
+          <li>Drag DOCX file(s) into the target OneNote section.</li>
           <li>OneNote creates one page per document automatically.</li>
         </ol>
         <p class="small">
-          Tip: This preserves note text, basic formatting, tables, checkboxes, links, and inline
-          images in most cases.
+          Note: OneNote does not support direct import of native <code>.one</code> files from ENEX.
+          DOCX drag-and-drop is the most reliable route while preserving structure as much as possible.
         </p>
       </section>
     </main>
