@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ENEX → OneNote Converter</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-docx-js/0.3.1/html-docx.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="layout">
+      <aside class="panel info-panel">
+        <a class="back-link" href="../../">← All tools</a>
+        <p class="eyebrow">Tool 01</p>
+        <h1>ENEX → OneNote</h1>
+        <p class="subtle">
+          Convert Evernote notebooks to DOCX files that import smoothly into OneNote.
+          Built for a clean, no-signup workflow.
+        </p>
+
+        <div class="tips">
+          <h2>Flow</h2>
+          <ol>
+            <li>Add one or more ENEX files.</li>
+            <li>Click Convert & Download.</li>
+            <li>Drag the output DOCX files into OneNote.</li>
+          </ol>
+        </div>
+      </aside>
+
+      <section class="panel tool-panel">
+        <header class="tool-header">
+          <h2>Convert files</h2>
+          <p>Modern, minimal, and structured output with progress tracking.</p>
+        </header>
+
+        <label for="enexFiles" class="label">ENEX files</label>
+        <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="Drop ENEX files here">
+          <p class="drop-title">Drop <code>.enex</code> files here</p>
+          <p class="drop-subtitle">or browse from your device</p>
+          <input id="enexFiles" type="file" accept=".enex,application/xml,text/xml" multiple />
+        </div>
+
+        <label class="toggle" for="singleOutput">
+          <input id="singleOutput" type="checkbox" />
+          <span>Download single DOCX if exactly one note is converted</span>
+        </label>
+
+        <button id="convertBtn" class="button" disabled>Convert & Download</button>
+
+        <div class="progress-wrap" aria-live="polite" aria-label="Conversion progress">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <p id="progressText" class="meta">No conversion running.</p>
+
+        <div id="status" class="status" aria-live="polite"></div>
+        <div id="errorBox" class="error-box" role="alert" aria-live="assertive" hidden></div>
+      </section>
+    </main>
+  </body>
+</html>

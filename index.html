@@ -3,66 +3,41 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ENEX → OneNote Helper</title>
+    <title>Personal Tools — Home</title>
     <link rel="stylesheet" href="styles.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-docx-js/0.3.1/html-docx.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js" defer></script>
-    <script src="app.js" defer></script>
   </head>
   <body>
-    <main class="container">
+    <main class="shell">
       <header class="hero card">
-        <h1>ENEX → OneNote (One-Click Helper)</h1>
-        <p class="lead">
-          Convert Evernote exports into OneNote-friendly files with structure-aware folders,
-          conversion progress, and clear error reporting.
+        <p class="eyebrow">Personal Tools Collection</p>
+        <h1>Small utilities I built for myself</h1>
+        <p>
+          A lightweight toolbox that starts with my Evernote → OneNote converter and is structured
+          so more tools can be added cleanly over time.
         </p>
+        <a class="button" href="./tools/enex-onenote/">Open first tool</a>
       </header>
 
       <section class="card">
-        <label for="enexFiles" class="label">1) Add your ENEX file(s)</label>
-        <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-label="Drop ENEX files here">
-          <p class="drop-title">Drop .enex files here</p>
-          <p class="drop-subtitle">or click below to browse</p>
-          <input id="enexFiles" type="file" accept=".enex,application/xml,text/xml" multiple />
+        <div class="section-heading">
+          <h2>Available tools</h2>
+          <span class="badge">1 live</span>
         </div>
 
-        <div class="options-grid">
-          <label class="checkbox-label" for="singleOutput">
-            <input id="singleOutput" type="checkbox" />
-            Download a single <code>.docx</code> when exactly 1 note is converted
-          </label>
-        </div>
-
-        <button id="convertBtn" class="button" disabled>2) Convert & Download</button>
-
-        <div class="progress-wrap" aria-live="polite" aria-label="Conversion progress">
-          <div id="progressBar" class="progress-bar"></div>
-        </div>
-        <p id="progressText" class="small progress-text">No conversion running.</p>
-
-        <div id="status" class="status" aria-live="polite"></div>
-        <div id="errorBox" class="error-box" role="alert" aria-live="assertive" hidden></div>
+        <a class="tool-card" href="./tools/enex-onenote/">
+          <div>
+            <h3>ENEX → OneNote Converter</h3>
+            <p>Convert Evernote exports into OneNote-friendly DOCX files with structured ZIP output.</p>
+          </div>
+          <span aria-hidden="true">→</span>
+        </a>
       </section>
 
-      <section class="card">
-        <h2>How to import to OneNote (easiest path)</h2>
-        <ol>
-          <li>Open OneNote desktop app (Windows/Mac).</li>
-          <li>Use generated file(s):
-            <ul>
-              <li>If you got a ZIP, unzip it first (folders mirror your ENEX notebook names).</li>
-              <li>If you got one DOCX, drag it directly.</li>
-            </ul>
-          </li>
-          <li>Drag DOCX file(s) into the target OneNote section.</li>
-          <li>OneNote creates one page per document automatically.</li>
-        </ol>
-        <p class="small">
-          Note: OneNote does not support direct import of native <code>.one</code> files from ENEX.
-          DOCX drag-and-drop is the most reliable route while preserving structure as much as possible.
+      <section class="card compact">
+        <h2>Deployment</h2>
+        <p>
+          This repo is static and ready for <strong>Cloudflare Pages</strong>. Connect the repository,
+          set build command to <code>(none)</code>, and output directory to <code>/</code>.
         </p>
       </section>
     </main>
