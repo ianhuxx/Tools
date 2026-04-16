@@ -1,52 +1,39 @@
-# ENEX → OneNote One-Click Helper
+# Personal Tools Repo
 
-This is a browser-based tool that converts Evernote export files (`.enex`) into Word documents (`.docx`) that OneNote can ingest quickly.
+This repository is now organized as a **collection of small personal tools**.
 
-## Why this is the easiest practical flow
+## Current tools
 
-Direct ENEX → native OneNote package conversion is not officially supported by Microsoft. The lowest-friction workflow is:
+- `tools/enex-onenote/` – ENEX → OneNote converter with a modern browser UI.
 
-1. Convert each Evernote note to `.docx`.
-2. Drag DOCX files into a OneNote section.
-3. OneNote creates one page per document.
+## Repo structure
 
-This tool automates step 1 with batch handling and structure-aware output folders.
+- `index.html` – tools home page / launcher.
+- `styles.css` – styles for the tools home page.
+- `tools/enex-onenote/index.html` – converter interface.
+- `tools/enex-onenote/styles.css` – converter styles.
+- `tools/enex-onenote/app.js` – ENEX parsing + DOCX generation + download flow.
 
-## Features
+## ENEX → OneNote converter highlights
 
-- Drag-and-drop or file picker upload for one or more `.enex` files.
-- Progress bar and status updates during conversion.
-- Error panel that reports notes/files that failed.
-- Structured ZIP output (one folder per ENEX notebook) to preserve notebook grouping.
-- Optional direct single-file download when exactly one note is converted.
+- Drag & drop or browse multiple ENEX files.
+- Progress bar and status updates.
+- Error panel with partial-failure reporting.
+- Structured ZIP output grouped by ENEX filename.
+- Optional single-DOCX download when exactly one note is converted.
 
-## How to use
+## Cloudflare Pages deployment
 
-1. Open `index.html` in a modern browser (Chrome/Edge/Firefox).
-2. Drop one or more `.enex` files or select them in the file picker.
-3. (Optional) Enable **Download a single .docx when exactly 1 note is converted**.
-4. Click **Convert & Download**.
-5. If a ZIP is downloaded, extract it.
-6. Open OneNote desktop and drag generated `.docx` file(s) into the destination section.
+This repo is static and deploys directly with Cloudflare Pages.
 
-## What gets preserved
+1. Push this repository to GitHub/GitLab.
+2. In Cloudflare Dashboard, create a new **Pages** project and connect the repo.
+3. Build settings:
+   - **Framework preset:** None
+   - **Build command:** *(leave empty)*
+   - **Build output directory:** `/`
+4. Deploy.
 
-- Note title
-- Text formatting (most common ENML formatting)
-- Tables and checklists (best effort)
-- Links
-- Inline images (mapped using ENEX resource hashes)
-- Notebook-level grouping (as ZIP folders named after each ENEX file)
+Your site root (`/`) serves the tool launcher, and the first tool is available at:
 
-## Limitations
-
-- Native `.one` file output is not supported.
-- Some advanced Evernote-only elements may be flattened.
-- Non-image attachments are represented as placeholders in the output document.
-- Very large exports may take time in-browser.
-
-## Files
-
-- `index.html` – UI and usage instructions
-- `styles.css` – styling
-- `app.js` – ENEX parsing + DOCX conversion + download logic
+- `/tools/enex-onenote/`
