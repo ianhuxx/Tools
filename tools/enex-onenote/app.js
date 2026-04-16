@@ -24,41 +24,75 @@ function md5HexFromBase64(base64) {
   return SparkMD5.ArrayBuffer.hash(bytes.buffer);
 }
 
-function parseEnex(xmlText) {
-  const parser = new DOMParser();
-  const xml = parser.parseFromString(xmlText, "application/xml");
+function sanitizeXmlText(xmlText) {
+  return (xmlText || "")
+    .replace(/^\uFEFF/, "")
+    .replace(/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD]/g, "");
+}
 
-  if (xml.querySelector("parsererror")) {
-    throw new Error("Invalid ENEX XML");
+function escapeBareAmpersands(xmlText) {
+  return xmlText.replace(/&(?!(?:amp|lt|gt|apos|quot|#\d+|#x[0-9a-f]+);)/gi, "&amp;");
+}
+
+function parseXml(xmlText) {
+  const parser = new DOMParser();
+  return parser.parseFromString(xmlText, "application/xml");
+}
+
+function extractNote(noteEl) {
+  const title = noteEl.querySelector("title")?.textContent?.trim() || "Untitled";
+  const created = noteEl.querySelector("created")?.textContent?.trim() || "";
+  const updated = noteEl.querySelector("updated")?.textContent?.trim() || "";
+
+  const resources = {};
+  for (const res of noteEl.querySelectorAll("resource")) {
+    const dataEl = res.querySelector("data");
+    const mime = res.querySelector("mime")?.textContent?.trim() || "application/octet-stream";
+    let hash = res.querySelector("data")?.getAttribute("hash") || "";
+    const fileName =
+      res.querySelector("resource-attributes > file-name")?.textContent?.trim() || "attachment";
+    const base64 = dataEl?.textContent?.replace(/\s+/g, "") || "";
+    if (!hash && base64) {
+      hash = md5HexFromBase64(base64);
+    }
+    if (hash && base64) {
+      resources[hash.toLowerCase()] = { base64, mime, fileName };
+    }
   }
 
-  const notes = Array.from(xml.querySelectorAll("note"));
-  return notes.map((noteEl) => {
-    const title = noteEl.querySelector("title")?.textContent?.trim() || "Untitled";
-    const created = noteEl.querySelector("created")?.textContent?.trim() || "";
-    const updated = noteEl.querySelector("updated")?.textContent?.trim() || "";
+  const contentRaw = noteEl.querySelector("content")?.textContent || "";
+  const enml = contentRaw.replace(/^\s*<\?xml[^>]*>\s*<!DOCTYPE[^>]*>/i, "");
 
-    const resources = {};
-    for (const res of noteEl.querySelectorAll("resource")) {
-      const dataEl = res.querySelector("data");
-      const mime = res.querySelector("mime")?.textContent?.trim() || "application/octet-stream";
-      let hash = res.querySelector("data")?.getAttribute("hash") || "";
-      const fileName =
-        res.querySelector("resource-attributes > file-name")?.textContent?.trim() || "attachment";
-      const base64 = dataEl?.textContent?.replace(/\s+/g, "") || "";
-      if (!hash && base64) {
-        hash = md5HexFromBase64(base64);
-      }
-      if (hash && base64) {
-        resources[hash.toLowerCase()] = { base64, mime, fileName };
+  return { title, created, updated, enml, resources };
+}
+
+function parseEnex(xmlText) {
+  const sanitized = sanitizeXmlText(xmlText);
+  let xml = parseXml(sanitized);
+
+  if (xml.querySelector("parsererror")) {
+    xml = parseXml(escapeBareAmpersands(sanitized));
+  }
+
+  if (xml.querySelector("parsererror")) {
+    const noteBlocks = sanitized.match(/<note\b[\s\S]*?<\/note>/gi) || [];
+    const recoveredNotes = [];
+    for (const noteXml of noteBlocks) {
+      const wrapped = `<en-export>${escapeBareAmpersands(noteXml)}</en-export>`;
+      const noteDoc = parseXml(wrapped);
+      const noteEl = noteDoc.querySelector("note");
+      if (!noteDoc.querySelector("parsererror") && noteEl) {
+        recoveredNotes.push(extractNote(noteEl));
       }
     }
 
-    const contentRaw = noteEl.querySelector("content")?.textContent || "";
-    const enml = contentRaw.replace(/^\s*<\?xml[^>]*>\s*<!DOCTYPE[^>]*>/i, "");
+    if (recoveredNotes.length > 0) {
+      return recoveredNotes;
+    }
+    throw new Error("Invalid ENEX XML");
+  }
 
-    return { title, created, updated, enml, resources };
-  });
+  return Array.from(xml.querySelectorAll("note")).map(extractNote);
 }
 
 function buildDocHtml(note) {
@@ -120,13 +154,23 @@ function updateProgress(progressBarEl, progressTextEl, done, total, label) {
   progressTextEl.textContent = label || `Progress: ${done}/${total} (${percent}%)`;
 }
 
-async function countTotalNotes(files) {
-  let total = 0;
+async function scanEnexFiles(files) {
+  let totalNotes = 0;
+  const parsedFiles = [];
+  const failures = [];
+
   for (const file of files) {
-    const xmlText = await readFileAsText(file);
-    total += parseEnex(xmlText).length;
+    try {
+      const xmlText = await readFileAsText(file);
+      const notes = parseEnex(xmlText);
+      totalNotes += notes.length;
+      parsedFiles.push({ file, notes });
+    } catch (err) {
+      failures.push(`File ${file.name}: ${err.message || String(err)}`);
+    }
   }
-  return total;
+
+  return { totalNotes, parsedFiles, failures };
 }
 
 async function convertFiles(files, controls) {
@@ -142,31 +186,21 @@ async function convertFiles(files, controls) {
   errorBoxEl.textContent = "";
 
   statusEl.textContent = "Scanning ENEX files...";
-  const totalNotes = await countTotalNotes(files);
+  const { totalNotes, parsedFiles, failures } = await scanEnexFiles(files);
 
   if (totalNotes === 0) {
-    throw new Error("No notes found in selected ENEX file(s).");
+    throw new Error(`No notes found in selected ENEX file(s). ${failures[0] || ""}`.trim());
   }
 
   let convertedNotes = 0;
-  const failures = [];
 
   updateProgress(progressBarEl, progressTextEl, 0, totalNotes, `Starting conversion (0/${totalNotes})...`);
 
   const zip = new JSZip();
   const flatOutputs = [];
 
-  for (const file of files) {
+  for (const { file, notes } of parsedFiles) {
     statusEl.textContent = `Reading ${file.name}...`;
-    let xmlText;
-    let notes;
-    try {
-      xmlText = await readFileAsText(file);
-      notes = parseEnex(xmlText);
-    } catch (err) {
-      failures.push(`File ${file.name}: ${err.message || String(err)}`);
-      continue;
-    }
 
     const notebookFolder = zip.folder(cleanFileName(file.name.replace(/\.enex$/i, "")));
 
